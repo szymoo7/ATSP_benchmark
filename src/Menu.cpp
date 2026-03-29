@@ -114,7 +114,7 @@ void Menu::runRandomSearch() {
     printResult(result);
 }
 
-// runIntelligentBenchmark: kick off automatic benchmark sequence
+// runIntelligentBenchmark: run automatic benchmark sequence
 void Menu::runIntelligentBenchmark() {
     std::cout << "\n[Menu] Running option: Intelligent Benchmark (Save to CSV)\n";
     std::cout << "[Menu] The process will be performed automatically without further questions.\n";

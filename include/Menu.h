@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+// Class for menu
 class Menu {
 public:
     void run();
@@ -20,6 +21,7 @@ private:
     void runIntelligentBenchmark();
     [[nodiscard]] TSPData selectDataForAlgorithmRun() const;
 
+    // Template for running algorithms
     template <typename TAlgorithm>
     void runAlgorithm(TAlgorithm algorithm, const TSPData& runData) {
         if (!data_.isLoaded()) {
@@ -31,6 +33,7 @@ private:
         printResult(result);
     }
 
+    // Helper functions for parsing
     static void printResult(const Result& result);
     [[nodiscard]] static int readInt(const std::string& prompt);
     [[nodiscard]] static long long readLongLong(const std::string& prompt);

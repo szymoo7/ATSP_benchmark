@@ -1,5 +1,5 @@
-// Benchmark: automated benchmarking utility for ATSP algorithms.
-// Calibrates runtime limits, maps TSPLIB instances to target sizes and produces CSV results.
+// Benchmark: automated benchmarking utility for ATSP algorithms
+// Calibrates runtime limits, maps TSPLIB instances to target sizes and produces CSV results
 
 #include "../include/Benchmark.h"
 
@@ -178,7 +178,7 @@ void Benchmark::runSmartBenchmark() {
         std::cout << "[Benchmark] ---- End of algorithm: " << algorithmName(kind) << " ----\n";
     };
 
-    // Add rows + run tests
+    // Add rows and run tests
     appendRowsForAlgorithm(AlgorithmKind::BruteForce, bfMaxSize);
     appendRowsForAlgorithm(AlgorithmKind::NearestNeighbor, nnMaxSize);
     appendRowsForAlgorithm(AlgorithmKind::RepetitiveNN, rnnMaxSize);
@@ -256,7 +256,7 @@ double Benchmark::computeRelativeErrorPercent(long long measured, long long refe
 }
 
 // calibrateMaxSize: determines the largest problem under 10 minutes
-// - Runs increasing sizes (with adaptive step) until the per-run time exceeds
+// - Runs increasing sizes until the per-run time exceeds
 //   kTargetCalibrationTimeMicroseconds or the base size limit
 // - Returns the largest N considered acceptable for later benchmarking
 int Benchmark::calibrateMaxSize(AlgorithmKind kind, const TSPData& baseData) const {
@@ -312,7 +312,7 @@ int Benchmark::calibrateMaxSize(AlgorithmKind kind, const TSPData& baseData) con
     return bestSize;
 }
 
-// runMultipleTrials: execute `trials` independent runs of `kind` on `data`
+// runMultipleTrials: execute trials independent runs of kind on data
 // - Collects average time, average cost and best observed cost
 // - Ensures at least one trial is executed
 Benchmark::AggregateResult Benchmark::runMultipleTrials(AlgorithmKind kind, const TSPData& data, int trials) const {
@@ -338,7 +338,7 @@ Benchmark::AggregateResult Benchmark::runMultipleTrials(AlgorithmKind kind, cons
 }
 
 // runSingle: run a single execution of the requested algorithm kind on data
-// - Dispatches to the concrete algorithm implementations.
+// - Dispatches to the concrete algorithm implementations
 // - Returns Result containing path, cost and execution time
 Result Benchmark::runSingle(AlgorithmKind kind, const TSPData& data) const {
     switch (kind) {
@@ -363,7 +363,7 @@ Result Benchmark::runSingle(AlgorithmKind kind, const TSPData& data) const {
     }
 }
 
-// buildSharedSmallPoints: produce a small set of N values shared across algos
+// buildSharedSmallPoints: produce a small set of N values shared across algorithms
 // - Chooses a few small N near the brute-force max for consistent references
 std::vector<int> Benchmark::buildSharedSmallPoints(int bfMaxSize) const {
     std::vector<int> points;
@@ -378,7 +378,7 @@ std::vector<int> Benchmark::buildSharedSmallPoints(int bfMaxSize) const {
 }
 
 // buildExtendedIdealPoints: find a few intermediate points between
-// fromSize and toSize (exclusive) using fractional ratios
+// fromSize and toSize (exclusive) using ratios
 // - Produces up to 4 points to sample larger problem sizes evenly
 std::vector<int> Benchmark::buildExtendedIdealPoints(int fromSize, int toSize) const {
     std::vector<int> points;
@@ -403,7 +403,7 @@ std::pair<int, Benchmark::DatasetDescriptor> Benchmark::mapToNearestDataset(
         throw std::runtime_error("TSPLIB file database is empty - no points to map.");
     }
 
-    // Find nearest available dataset size to the targetSize.
+    // Find the nearest available dataset size to the targetSize
     auto it = datasetBySize.lower_bound(targetSize);
     if (it == datasetBySize.begin()) {
         return *it;
@@ -489,8 +489,9 @@ std::vector<Benchmark::MeasurementPoint> Benchmark::buildPointsForAlgorithm(
 
     return points;
 }
-// runRandConvergenceTest: evaluate RAND heuristic convergence across time limits
-// - Uses a fixed test instance (targetSize) and a set of time budgets
+
+// runRandConvergenceTest: test RAND heuristic convergence across time limits
+// - Uses a fixed test instance (targetSize) and a set of time limits
 // - For each time limit runs kRandConvergenceTrials independent runs and records averages
 void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
                                        const std::map<int, DatasetDescriptor>& datasetBySize) const {

@@ -6,7 +6,7 @@
 #include <optional>
 #include <random>
 
-// RandomSearchAlgorithm: stochastic search that samples random permutations within a time budget
+// RandomSearchAlgorithm: stochastic search that samples random permutations within a given time
 class RandomSearchAlgorithm final : public IAlgorithm {
 public:
     explicit RandomSearchAlgorithm(long long timeLimitMs, std::optional<std::uint32_t> seed = std::nullopt);

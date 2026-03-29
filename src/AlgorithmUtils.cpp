@@ -1,6 +1,6 @@
 #include "../include/AlgorithmUtils.h"
 
-// calculateCycleCost: compute cost of a cycle given by path.
+// calculateCycleCost: compute cost of a cycle given by path
 int calculateCycleCost(const TSPData& data, const std::vector<int>& path) {
     if (path.empty()) {
         return 0;

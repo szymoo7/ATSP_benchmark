@@ -19,12 +19,14 @@ Result BruteForceAlgorithm::solve(const TSPData& data) {
     Timer timer;
     timer.start();
 
+    // Cheks if data is loaded and if not empty
     if (!data.isLoaded() || data.size == 0) {
         result.minCost = 0;
         result.executionTimeMicroseconds = timer.elapsedMicroseconds();
         return result;
     }
 
+    // If simple case return
     if (data.size == 1) {
         result.bestPath = {0};
         result.minCost = data.distanceMatrix[0][0];

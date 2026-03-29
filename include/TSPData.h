@@ -1,5 +1,5 @@
-// TSPData: compact representation of a TSPLIB distance matrix using dynamic memory.
-// Provides safe copy / move semantics and helper to create truncated instances.
+// TSPData: compact representation of a TSPLIB distance matrix using dynamic memory
+// Provides safe copy / move semantics and helper to create truncated instances
 #pragma once
 
 #include <cstddef>
@@ -18,7 +18,7 @@ struct TSPData {
     }
 
     // getTruncatedData: return a new TSPData containing top-left newSize x newSize
-    // matrix. Allocates new memory for the truncated instance.
+    // matrix. Allocates new memory for the truncated instance
     [[nodiscard]] TSPData getTruncatedData(int newSize) const {
         if (newSize < 2) {
             throw std::invalid_argument("newSize must be >= 2.");

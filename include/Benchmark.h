@@ -91,7 +91,7 @@ private:
     // Find points that cover with bruteforce
     [[nodiscard]] std::vector<int> buildSharedSmallPoints(int bfMaxSize) const;
 
-    //
+    // Build ready points for testing
     [[nodiscard]] std::vector<MeasurementPoint> buildPointsForAlgorithm(AlgorithmKind kind,
                                                                         int algorithmMaxSize,
                                                                         const std::vector<int>& sharedSmallPoints,
@@ -99,13 +99,16 @@ private:
                                                                         const std::map<int, long long>& smallPointBfCosts,
                                                                         int baseSize) const;
 
+    // Spreading points uniformly
     [[nodiscard]] std::vector<int> buildExtendedIdealPoints(int fromSize, int toSize) const;
+
+    // Mapping points to best fitting file
     [[nodiscard]] std::pair<int, DatasetDescriptor> mapToNearestDataset(
             int targetSize,
             const std::map<int, DatasetDescriptor>& datasetBySize) const;
     void runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
                                 const std::map<int, DatasetDescriptor>& datasetBySize) const;
 
-
+    // Saving rows into csv
     void writeCsv(const std::vector<BenchmarkRow>& rows) const;
 };
