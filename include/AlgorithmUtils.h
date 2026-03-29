@@ -1,4 +1,4 @@
-// AlgorithmUtils: utility functions for algorithms (cost calculation, etc.)
+// AlgorithmUtils: utility class for calculating cycle cost
 #pragma once
 
 #include "TSPData.h"

@@ -15,6 +15,7 @@
 NearestNeighborAlgorithm::NearestNeighborAlgorithm(int startVertex) : startVertex_(startVertex) {
 }
 
+// Run NN algorithm for given data
 Result NearestNeighborAlgorithm::solve(const TSPData& data) {
     // Prepare result and timer
     Result result;
@@ -40,7 +41,7 @@ Result NearestNeighborAlgorithm::solve(const TSPData& data) {
     path.push_back(start);
     visited[start] = true;
 
-    // Greedy loop: at each step pick the nearest unvisited vertex
+    // loop: at each step pick the nearest unvisited vertex
     int current = start;
     for (std::size_t step = 1; step < data.size; ++step) {
         int bestNext = -1;
@@ -58,7 +59,7 @@ Result NearestNeighborAlgorithm::solve(const TSPData& data) {
             }
         }
 
-        // If no next vertex found (shouldn't happen in a complete matrix), stop early
+        // If no next vertex found, stop early
         if (bestNext == -1) {
             break;
         }
@@ -75,6 +76,7 @@ Result NearestNeighborAlgorithm::solve(const TSPData& data) {
     return result;
 }
 
+// Makes sure vertex is valid
 int NearestNeighborAlgorithm::normalizeStartVertex(std::size_t n) const {
     if (startVertex_ < 0) {
         return 0;

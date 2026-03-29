@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+// Runs RNN algorithm for given data
 Result RepetitiveNNAlgorithm::solve(const TSPData& data) {
     Result result;
     Timer timer;
@@ -26,6 +27,7 @@ Result RepetitiveNNAlgorithm::solve(const TSPData& data) {
     int globalBestCost = std::numeric_limits<int>::max();
     std::vector<int> globalBestPath;
 
+    // Builds NN algorithm path for each vertice
     for (std::size_t start = 0; start < data.size; ++start) {
         auto path = buildPathFromStart(data, static_cast<int>(start));
         const int cost = calculateCycleCost(data, path);
@@ -41,6 +43,7 @@ Result RepetitiveNNAlgorithm::solve(const TSPData& data) {
     return result;
 }
 
+// Runs NN algorith for given data with given start vertice
 std::vector<int> RepetitiveNNAlgorithm::buildPathFromStart(const TSPData& data, int start) {
     std::vector<bool> visited(data.size, false);
     std::vector<int> path;

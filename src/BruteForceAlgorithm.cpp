@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+// Runs algorithm for given data
 Result BruteForceAlgorithm::solve(const TSPData& data) {
     Result result;
     Timer timer;
@@ -43,7 +44,7 @@ Result BruteForceAlgorithm::solve(const TSPData& data) {
     std::vector<int> path;
     path.reserve(data.size);
 
-    // Iterate all permutations lexicographically
+    // Iterate all permutations
     do {
         path.clear();
         path.push_back(0);

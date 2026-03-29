@@ -21,6 +21,7 @@ RandomSearchAlgorithm::RandomSearchAlgorithm(long long timeLimitMs, std::optiona
       rng_(seed.has_value() ? *seed : std::random_device{}()) {
 }
 
+// Runs Random algorithm for given data
 Result RandomSearchAlgorithm::solve(const TSPData& data) {
     Result result;
     const auto startedAt = std::chrono::steady_clock::now();
@@ -51,12 +52,15 @@ Result RandomSearchAlgorithm::solve(const TSPData& data) {
         }
 
         atLeastOneIteration = true;
+        // Shuffles vertices
         std::shuffle(vertices.begin(), vertices.end(), rng_);
 
+        // Adding path
         candidatePath.clear();
         candidatePath.push_back(0);
         candidatePath.insert(candidatePath.end(), vertices.begin(), vertices.end());
 
+        // Updating cost
         const int cost = calculateCycleCost(data, candidatePath);
         if (cost < bestCost) {
             bestCost = cost;

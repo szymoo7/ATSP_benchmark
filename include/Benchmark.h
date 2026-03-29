@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-// Benchmark: orchestrates calibration and measurement across algorithms/datasets
+// Benchmark: calibration and measurement for algorithms and datasets
 class Benchmark {
 public:
     void runSmartBenchmark();
@@ -36,7 +36,7 @@ private:
         std::string parameters;
     };
 
-    // DatasetDescriptor: dataset metadata (file + known optimum if available)
+    // DatasetDescriptor: dataset information (file + known optimum if available)
     struct DatasetDescriptor {
         std::string fileName;
         long long knownOptimum = -1;
@@ -59,25 +59,39 @@ private:
         long long bestCost = -1;
     };
 
-    // Configuration constants used by benchmark
-    static constexpr long long kTargetCalibrationTimeMicroseconds = 10LL * 60LL * 1000LL * 1000LL;
-    static constexpr int kBruteForceHardMaxSize = 14;
-    static constexpr int kTrialsPerMeasurement = 3;
-    static constexpr int kRandConvergenceTrials = 10;
-    static constexpr long long kRandTimeLimitMs = 1000;
+    // Configuration parameters used by benchmark
+    static constexpr long long kTargetCalibrationTimeMicroseconds = 10LL * 60LL * 1000LL * 1000LL; // 10 minutes
+    static constexpr int kBruteForceHardMaxSize = 15;
+    static constexpr int kTrialsPerMeasurement = 5;
+    static constexpr int kRandConvergenceTrials = 5;
+    static constexpr long long kRandTimeLimitMs = 1000 * 60 * 10; // 10 minutes
     static constexpr const char* kCalibrationFileName = "ftv170.atsp";
 
+    // Return the corresponding string for given algorithm
     [[nodiscard]] static std::string algorithmName(AlgorithmKind kind);
 
+    // Load data from file with given name
     [[nodiscard]] TSPData loadFromFileName(const std::string& fileName) const;
+
+    // Find file path with given name
     [[nodiscard]] std::optional<std::string> resolveDataPath(const std::string& fileName) const;
+
+    // Calculate relative error
     [[nodiscard]] double computeRelativeErrorPercent(long long measured, long long reference) const;
 
+    // Find N_max
     [[nodiscard]] int calibrateMaxSize(AlgorithmKind kind, const TSPData& baseData) const;
+
+    // Run multiple tests for same instance
     [[nodiscard]] AggregateResult runMultipleTrials(AlgorithmKind kind, const TSPData& data, int trials) const;
+
+    // Run single test for instance
     [[nodiscard]] Result runSingle(AlgorithmKind kind, const TSPData& data) const;
 
+    // Find points that cover with bruteforce
     [[nodiscard]] std::vector<int> buildSharedSmallPoints(int bfMaxSize) const;
+
+    //
     [[nodiscard]] std::vector<MeasurementPoint> buildPointsForAlgorithm(AlgorithmKind kind,
                                                                         int algorithmMaxSize,
                                                                         const std::vector<int>& sharedSmallPoints,

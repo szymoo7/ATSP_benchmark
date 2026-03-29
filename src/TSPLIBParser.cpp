@@ -5,6 +5,7 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
+#include <iostream>
 
 // parse: read weights from TSPLIB file and build a TSPData instance
 TSPData TSPLIBParser::parse(const std::string& filePath) {
@@ -19,7 +20,11 @@ TSPData TSPLIBParser::parse(const std::string& filePath) {
     std::vector<int> weights;
 
     std::string line;
-    // Read file line by line, collect integers from weight sections or plain matrices
+    // TSPLIB format parsing: skip header lines and collect integers from
+    // the EDGE_WEIGHT_SECTION if present, otherwise collect numeric-only lines
+    // (this effectively ignores headers and takes the matrix data).
+    file.clear();
+    file.seekg(0);
     while (std::getline(file, line)) {
         const std::string trimmed = trim(line);
         if (trimmed.empty()) {
@@ -51,6 +56,14 @@ TSPData TSPLIBParser::parse(const std::string& filePath) {
         // collect integers from either edge weight section or from plain numeric lines
         if (inEdgeWeightSection || (!sawEdgeWeightSection && !containsAlpha(upper))) {
             auto values = extractIntegers(trimmed);
+
+            // Support plain format where first numeric-only line is the dimension (e.g., "17" then matrix)
+            if (!inEdgeWeightSection && !sawEdgeWeightSection && weights.empty() && values.size() == 1 && values[0] > 0) {
+
+                // treat as dimension and don't insert into weights
+                dimension = static_cast<std::size_t>(values[0]);
+                continue;
+            }
             weights.insert(weights.end(), values.begin(), values.end());
         }
     }
@@ -64,10 +77,37 @@ TSPData TSPLIBParser::parse(const std::string& filePath) {
         dimension = candidate;
     }
 
-    const std::size_t requiredValues = dimension * dimension;
-    if (weights.size() < requiredValues) {
-        throw std::runtime_error("Insufficient weights in TSPLIB file: expected " + std::to_string(requiredValues) +
-                                 ", read " + std::to_string(weights.size()) + ".");
+    // Validate and possibly recover from mismatch between declared DIMENSION and actual data
+    bool missingDiagonal = false;
+
+    // If DIMENSION provided, check consistency with collected weights
+    if (dimension != 0) {
+        std::size_t requiredValues = dimension * dimension;
+        if (weights.size() < requiredValues) {
+
+            // try to infer a correct square dimension from available values
+            const auto candidate = static_cast<std::size_t>(std::sqrt(static_cast<long double>(weights.size())));
+            if (candidate * candidate == weights.size()) {
+                std::cerr << "Warning: DIMENSION header (" << dimension << ") doesn't match data; inferring dimension = "
+                          << candidate << " from available weights.\n";
+                dimension = candidate;
+            } else if (weights.size() == dimension * (dimension - 1)) {
+
+                // case where diagonal values omitted from the file
+                std::cerr << "Warning: weights appear to omit diagonal entries for declared dimension " << dimension
+                          << "; will assume diagonal=0 when constructing matrix.\n";
+                missingDiagonal = true;
+            } else {
+                throw std::runtime_error("Insufficient weights in TSPLIB file: expected " + std::to_string(requiredValues) +
+                                         ", read " + std::to_string(weights.size()) + ".");
+            }
+        } else if (weights.size() > requiredValues) {
+            // too many values so trim extras but warn
+            std::cerr << "Warning: more weights (" << weights.size() << ") than expected for DIMENSION " << dimension
+                      << " (" << requiredValues << "); extra values will be ignored.\n";
+            // trim to requiredValues
+            weights.resize(requiredValues);
+        }
     }
 
     // Allocate dynamic matrix and copy values row-major
@@ -78,7 +118,11 @@ TSPData TSPLIBParser::parse(const std::string& filePath) {
     for (std::size_t i = 0; i < dimension; ++i) {
         data.distanceMatrix[i] = new int[dimension];
         for (std::size_t j = 0; j < dimension; ++j) {
-            data.distanceMatrix[i][j] = weights[idx++];
+            if (missingDiagonal && i == j) {
+                data.distanceMatrix[i][j] = 0;
+            } else {
+                data.distanceMatrix[i][j] = weights[idx++];
+            }
         }
     }
     return data;

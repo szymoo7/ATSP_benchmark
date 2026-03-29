@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <vector>
 
+// Mapped data set in format {nodes, {file_name, best_known_solution}}
 namespace {
 const std::map<int, std::pair<std::string, long long>> kDatasetCatalog = {
     {17, {"br17.atsp", 39}},
@@ -43,10 +44,10 @@ const std::map<int, std::pair<std::string, long long>> kDatasetCatalog = {
 };
 }
 
-// runSmartBenchmark: main orchestrator for the automated benchmark.
-// - Performs calibration, maps requested sizes to available TSPLIB files,
-//   executes measurements for each algorithm, and writes CSV results.
-// - Controls flow and error handling for the full benchmark pipeline.
+// runSmartBenchmark: main function for the automated benchmark
+// - Performs calibration, maps requested sizes to available TSPLIB files
+// - executes measurements for each algorithm, and writes CSV results
+// - Controls flow and error handling for the full benchmark
 void Benchmark::runSmartBenchmark() {
     std::cout << "\n[Benchmark] ============================================\n";
     std::cout << "[Benchmark] Starting intelligent ATSP benchmark\n";
@@ -56,6 +57,7 @@ void Benchmark::runSmartBenchmark() {
     std::cout << "[Benchmark] Phase 4/4: RAND convergence test\n";
     std::cout << "[Benchmark] ============================================\n";
 
+    // Finding dataset files
     std::map<int, DatasetDescriptor> datasetBySize;
     for (const auto& [size, descriptor] : kDatasetCatalog) {
         if (!resolveDataPath(descriptor.first).has_value()) {
@@ -66,6 +68,7 @@ void Benchmark::runSmartBenchmark() {
         datasetBySize[size] = {descriptor.first, descriptor.second};
     }
 
+    // Loading file for calibration (ftv170.atsp)
     TSPData baseData;
     try {
         baseData = loadFromFileName(kCalibrationFileName);
@@ -79,6 +82,7 @@ void Benchmark::runSmartBenchmark() {
     std::cout << "[Benchmark] Single run time limit in calibration: "
               << kTargetCalibrationTimeMicroseconds / 1000LL << " ms (~10 min)\n";
 
+    // Running calibration for algorithms (finding N_max)
     const int bfMaxSize = calibrateMaxSize(AlgorithmKind::BruteForce, baseData);
     const int nnMaxSize = calibrateMaxSize(AlgorithmKind::NearestNeighbor, baseData);
     const int rnnMaxSize = calibrateMaxSize(AlgorithmKind::RepetitiveNN, baseData);
@@ -87,12 +91,14 @@ void Benchmark::runSmartBenchmark() {
     std::cout << "[Benchmark] Calibration results Nmax: BF=" << bfMaxSize << ", NN=" << nnMaxSize
               << ", RNN=" << rnnMaxSize << " (RAND uses RNN)\n";
 
+    // Finding shared points (3 last < bfMaxSize)
     const std::vector<int> sharedSmallPoints = buildSharedSmallPoints(bfMaxSize);
     std::cout << "[Benchmark] Shared points (small N): ";
     for (size_t i = 0; i < sharedSmallPoints.size(); ++i) {
         std::cout << sharedSmallPoints[i] << (i + 1 == sharedSmallPoints.size() ? "\n" : ", ");
     }
 
+    // Run tests for brute force small N (N < 12)
     std::map<int, long long> smallPointBfCosts;
     for (const int n : sharedSmallPoints) {
         const TSPData truncated = baseData.getTruncatedData(n);
@@ -105,6 +111,8 @@ void Benchmark::runSmartBenchmark() {
     std::vector<BenchmarkRow> rows;
 
     const auto appendRowsForAlgorithm = [&](AlgorithmKind kind, int algorithmMaxSize) {
+
+        // Build rest 4 points for algorithm
         std::cout << "\n[Benchmark] ---- Algorithm: " << algorithmName(kind) << " ----\n";
         const std::vector<MeasurementPoint> points = buildPointsForAlgorithm(
                 kind,
@@ -137,6 +145,7 @@ void Benchmark::runSmartBenchmark() {
                 continue;
             }
 
+            // Running tests
             const AggregateResult aggregate = runMultipleTrials(kind, testData, kTrialsPerMeasurement);
             const long long avgUs = aggregate.averageTimeMicroseconds;
             const long long measuredCost = static_cast<long long>(std::llround(aggregate.averageCost));
@@ -148,6 +157,7 @@ void Benchmark::runSmartBenchmark() {
                 relativeError = computeRelativeErrorPercent(measuredCost, point.referenceCost);
             }
 
+            // Prepare rows for saving
             rows.push_back({point.sourceLabel,
                             algorithmName(kind),
                             point.mappedSize,
@@ -168,23 +178,26 @@ void Benchmark::runSmartBenchmark() {
         std::cout << "[Benchmark] ---- End of algorithm: " << algorithmName(kind) << " ----\n";
     };
 
+    // Add rows + run tests
     appendRowsForAlgorithm(AlgorithmKind::BruteForce, bfMaxSize);
     appendRowsForAlgorithm(AlgorithmKind::NearestNeighbor, nnMaxSize);
     appendRowsForAlgorithm(AlgorithmKind::RepetitiveNN, rnnMaxSize);
     appendRowsForAlgorithm(AlgorithmKind::Random, randMaxSize);
 
+    // Run random test for convergence
     try {
         runRandConvergenceTest(rows, datasetBySize);
     } catch (const std::exception& ex) {
         std::cout << "[Benchmark] RAND convergence test skipped: " << ex.what() << "\n";
     }
 
+    // Save data into csv
     writeCsv(rows);
     std::cout << "[Benchmark] Benchmark finished. Results saved to benchmark_results.csv\n";
 }
 
 // algorithmName: return short label for a given AlgorithmKind
-// - Pure helper: maps enum to short string used in logs/CSV.
+// - Pure helper: maps enum to short string used in logs/CSV
 std::string Benchmark::algorithmName(AlgorithmKind kind) {
     switch (kind) {
         case AlgorithmKind::BruteForce:
@@ -201,8 +214,8 @@ std::string Benchmark::algorithmName(AlgorithmKind kind) {
 }
 
 // loadFromFileName: resolve a dataset path and parse it into TSPData
-// - Throws runtime_error if file cannot be resolved.
-// - Delegates heavy lifting to TSPLIBParser::parse.
+// - Throws runtime_error if file cannot be resolved
+// - Delegates heavy lifting to TSPLIBParser::parse
 TSPData Benchmark::loadFromFileName(const std::string& fileName) const {
     const auto resolved = resolveDataPath(fileName);
     if (!resolved.has_value()) {
@@ -211,6 +224,9 @@ TSPData Benchmark::loadFromFileName(const std::string& fileName) const {
     return TSPLIBParser::parse(resolved.value());
 }
 
+// resolveDataPath: search common relative locations for a data file and return absolute path
+// - Looks under ./data, ../data and ../../data and returns the first existing path
+// - Returns std::nullopt if not found
 std::optional<std::string> Benchmark::resolveDataPath(const std::string& fileName) const {
     namespace fs = std::filesystem;
 
@@ -230,11 +246,7 @@ std::optional<std::string> Benchmark::resolveDataPath(const std::string& fileNam
     return std::nullopt;
 }
 
-// resolveDataPath: search common relative locations for a data file and return absolute path
-// - Looks under ./data, ../data and ../../data and returns the first existing path.
-// - Returns std::nullopt if not found.
-
-
+// Calculating relative error
 double Benchmark::computeRelativeErrorPercent(long long measured, long long reference) const {
     // compute relative error in percent; return 0 if reference invalid
     if (reference <= 0) {
@@ -243,11 +255,10 @@ double Benchmark::computeRelativeErrorPercent(long long measured, long long refe
     return (static_cast<double>(measured - reference) / static_cast<double>(reference)) * 100.0;
 }
 
-// calibrateMaxSize: determine the largest problem size that completes within
-// the target calibration time for a given algorithm.
+// calibrateMaxSize: determines the largest problem under 10 minutes
 // - Runs increasing sizes (with adaptive step) until the per-run time exceeds
-//   kTargetCalibrationTimeMicroseconds or the base size limit.
-// - Returns the largest N considered acceptable for later benchmarking.
+//   kTargetCalibrationTimeMicroseconds or the base size limit
+// - Returns the largest N considered acceptable for later benchmarking
 int Benchmark::calibrateMaxSize(AlgorithmKind kind, const TSPData& baseData) const {
     const long long limitUs = kTargetCalibrationTimeMicroseconds;
     int startN = 5;
@@ -301,9 +312,9 @@ int Benchmark::calibrateMaxSize(AlgorithmKind kind, const TSPData& baseData) con
     return bestSize;
 }
 
-// runMultipleTrials: execute `trials` independent runs of `kind` on `data`.
-// - Collects average time, average cost and best observed cost.
-// - Ensures at least one trial is executed.
+// runMultipleTrials: execute `trials` independent runs of `kind` on `data`
+// - Collects average time, average cost and best observed cost
+// - Ensures at least one trial is executed
 Benchmark::AggregateResult Benchmark::runMultipleTrials(AlgorithmKind kind, const TSPData& data, int trials) const {
     long long totalTime = 0;
     long long totalCost = 0;
@@ -328,7 +339,7 @@ Benchmark::AggregateResult Benchmark::runMultipleTrials(AlgorithmKind kind, cons
 
 // runSingle: run a single execution of the requested algorithm kind on data
 // - Dispatches to the concrete algorithm implementations.
-// - Returns Result containing path, cost and execution time.
+// - Returns Result containing path, cost and execution time
 Result Benchmark::runSingle(AlgorithmKind kind, const TSPData& data) const {
     switch (kind) {
         case AlgorithmKind::BruteForce: {
@@ -353,7 +364,7 @@ Result Benchmark::runSingle(AlgorithmKind kind, const TSPData& data) const {
 }
 
 // buildSharedSmallPoints: produce a small set of N values shared across algos
-// - Chooses a few small N near the brute-force max for consistent references.
+// - Chooses a few small N near the brute-force max for consistent references
 std::vector<int> Benchmark::buildSharedSmallPoints(int bfMaxSize) const {
     std::vector<int> points;
     const int maxN = std::max(2, bfMaxSize);
@@ -366,9 +377,9 @@ std::vector<int> Benchmark::buildSharedSmallPoints(int bfMaxSize) const {
     return points;
 }
 
-// buildExtendedIdealPoints: interpolate a few intermediate points between
-// fromSize and toSize (exclusive) using fractional ratios.
-// - Produces up to 4 points to sample larger problem sizes evenly.
+// buildExtendedIdealPoints: find a few intermediate points between
+// fromSize and toSize (exclusive) using fractional ratios
+// - Produces up to 4 points to sample larger problem sizes evenly
 std::vector<int> Benchmark::buildExtendedIdealPoints(int fromSize, int toSize) const {
     std::vector<int> points;
     if (toSize <= fromSize) {
@@ -384,6 +395,7 @@ std::vector<int> Benchmark::buildExtendedIdealPoints(int fromSize, int toSize) c
     return points;
 }
 
+// Mapping evenly spread points to actual files
 std::pair<int, Benchmark::DatasetDescriptor> Benchmark::mapToNearestDataset(
         int targetSize,
         const std::map<int, DatasetDescriptor>& datasetBySize) const {
@@ -408,6 +420,7 @@ std::pair<int, Benchmark::DatasetDescriptor> Benchmark::mapToNearestDataset(
     return (leftDist <= rightDist) ? *left : *right;
 }
 
+// Function that builds MeasurementPoints for algorithms
 std::vector<Benchmark::MeasurementPoint> Benchmark::buildPointsForAlgorithm(
         AlgorithmKind kind,
         int algorithmMaxSize,
@@ -415,6 +428,7 @@ std::vector<Benchmark::MeasurementPoint> Benchmark::buildPointsForAlgorithm(
         const std::map<int, DatasetDescriptor>& datasetBySize,
         const std::map<int, long long>& smallPointBfCosts,
         int baseSize) const {
+
     // Build the list of measurement points (requested size, mapped size, source)
     std::vector<MeasurementPoint> points;
 
@@ -427,10 +441,10 @@ std::vector<Benchmark::MeasurementPoint> Benchmark::buildPointsForAlgorithm(
     const int cappedMax = std::min(algorithmMaxSize, baseSize);
     const std::vector<int> idealLargePoints = buildExtendedIdealPoints(sharedSmallPoints.back(), cappedMax);
 
-    // For brute-force we prefer truncated calibration base points
+    // For brute-force prefer truncated calibration base points
     if (kind == AlgorithmKind::BruteForce) {
         for (const int idealN : idealLargePoints) {
-            if (std::find_if(points.begin(), points.end(), [idealN](const MeasurementPoint& p) {
+            if (std::find_if(points.begin(), points.end(), [idealN](const MeasurementPoint& p){
                     return p.mappedSize == idealN && p.useTruncatedBase;
                 }) != points.end()) {
                 continue;
@@ -475,12 +489,12 @@ std::vector<Benchmark::MeasurementPoint> Benchmark::buildPointsForAlgorithm(
 
     return points;
 }
-
+// runRandConvergenceTest: evaluate RAND heuristic convergence across time limits
+// - Uses a fixed test instance (targetSize) and a set of time budgets
+// - For each time limit runs kRandConvergenceTrials independent runs and records averages
 void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
                                        const std::map<int, DatasetDescriptor>& datasetBySize) const {
-    // runRandConvergenceTest: evaluate RAND heuristic convergence across time limits
-    // - Uses a fixed test instance (targetSize) and a set of time budgets.
-    // - For each time limit runs kRandConvergenceTrials independent runs and records averages.
+
     std::cout << "\n[Benchmark][RAND-CONV] Starting RAND convergence test\n";
 
     const int targetSize = 48;
@@ -504,6 +518,7 @@ void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
         std::cout << timeLimitsMs[i] << (i + 1 == timeLimitsMs.size() ? "\n" : ", ");
     }
 
+    // Adding random seed
     std::random_device rd;
     std::mt19937 seedGenerator(rd());
     std::uniform_int_distribution<std::uint32_t> seedDistribution;
@@ -513,6 +528,7 @@ void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
         long long totalCost = 0;
         long long bestCost = std::numeric_limits<long long>::max();
 
+        // Run test and collect data
         for (int trial = 0; trial < kRandConvergenceTrials; ++trial) {
             const std::uint32_t trialSeed = seedDistribution(seedGenerator);
             RandomSearchAlgorithm algorithm(limitMs, trialSeed);
@@ -522,6 +538,7 @@ void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
             bestCost = std::min(bestCost, static_cast<long long>(result.minCost));
         }
 
+        // Calculate averages
         const long long averageTimeUs = totalTimeUs / kRandConvergenceTrials;
         const double averageCost = static_cast<double>(totalCost) / static_cast<double>(kRandConvergenceTrials);
         const double relativeError = descriptor.knownOptimum > 0
@@ -552,6 +569,7 @@ void Benchmark::runRandConvergenceTest(std::vector<BenchmarkRow>& rows,
     std::cout << "[Benchmark][RAND-CONV] End of RAND convergence test\n";
 }
 
+// Write rows into csv file
 void Benchmark::writeCsv(const std::vector<BenchmarkRow>& rows) const {
     std::ofstream outFile("benchmark_results.csv");
     if (!outFile) {
