@@ -580,7 +580,7 @@ void Benchmark::writeCsv(const std::vector<BenchmarkRow>& rows) const {
 
     std::cout << "[Benchmark] CSV save: benchmark_results.csv | row count=" << rows.size() << "\n";
 
-    outFile << "Source;Algorithm;N;Avg_Time_us;Avg_Cost;Best_Cost;Trial_Count;Reference_Cost;Relative_Error_%25;Parameters\n";
+    outFile << "Source;Algorithm;N;Avg_Time_us;Avg_Cost;Best_Cost;Trial_Count;Reference_Cost;Relative_Error_%;Parameters\n";
     outFile << std::fixed << std::setprecision(3);
 
     for (const BenchmarkRow& row : rows) {
