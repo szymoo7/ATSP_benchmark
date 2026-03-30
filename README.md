@@ -1,8 +1,8 @@
-# PEA_project1
+# ATSP Benchmark
 
 ## Opis projektu
 
-Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera (TSP) dla instancji ATSP (asymetryczny problem komiwojażera). Program umożliwia wczytywanie danych z plików, uruchamianie wybranych algorytmów oraz analizę wyników. Implementacja w C++ bez bibliotek zewnętrznych, z wykorzystaniem STL.
+Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla instancji ATSP (asymetryczny problem komiwojażera). Program umożliwia wczytywanie danych z plików, uruchamianie wybranych algorytmów oraz analizę wyników. Implementacja w C++ bez bibliotek zewnętrznych, z wykorzystaniem STL.
 
 ## Struktura projektu
 
@@ -22,7 +22,7 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera (TSP) 
 ## Wykorzystane struktury danych i rozwiązania techniczne
 
 - **Macierz odległości**: dynamicznie alokowana tablica wskaźników na tablice (`int**`) - każdy wiersz to osobna tablica długości N. Implementacja znajduje się w `include/TSPData.h`, z konstruktorami, operatorami kopiującymi/przenoszącymi oraz funkcją `getTruncatedData` tworzącą nową, przyciętą instancję.
-- **Permutacje**: generowane przy użyciu `std::next_permutation` (Brute Force, Random Search).
+- **Permutacje**: generowane przy użyciu `std::next_permutation` (Brute Force).
 - **Wektory STL**: do przechowywania tras, permutacji, wyników i danych wejściowych (`std::vector<int>`, `std::vector<Result>`).
 - **Mapy i słowniki**: do mapowania nazw plików i wyników benchmarków (`std::map`, `std::unordered_map`).
 - **Interfejsy i polimorfizm**: interfejs `IAlgorithm` oraz klasy dziedziczące dla każdego algorytmu.
@@ -52,7 +52,7 @@ cmake --build cmake-build-release --config Release
 
 ## Pliki wejściowe
 
-Pliki z danymi ATSP znajdują się w katalogu `data/`. Obsługiwane są pliki w formacie TSPLIB (sekcja `EDGE_WEIGHT_SECTION`).
+Pliki z danymi ATSP znajdują się w katalogu `data/`. Obsługiwane są pliki w formacie TSPLIB (sekcja `EDGE_WEIGHT_SECTION`) i liczba wierzchołków, macierz.
 
 Przykładowy fragment pliku ATSP (TSPLIB):
 
@@ -80,7 +80,7 @@ Testowanie odbywa się manualnie poprzez uruchamianie programu i wybór opcji z 
 4. Opcja `7` → automatyczny benchmark i zapis do pliku `benchmark_results.csv` (w katalogu build)
 5. Opcja `0` → zakończenie programu
 
-## Kalibracja i dobór parametrów testów (zgodnie z implementacją)
+## Kalibracja i dobór parametrów testów
 
 1) Główne stałe i pliki konfiguracyjne (domyślne)
 
@@ -139,7 +139,7 @@ Wszystkie wartości znajdują się w `include/Benchmark.h` i można je zmienić 
 
 ## Autor
 
-Szymon Wesołowski
+### Szymon Wesołowski
 
 ## Licencja
 
