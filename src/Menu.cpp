@@ -1,10 +1,13 @@
-// Menu: command-line user interface for loading data and running algorithms.
-// Provides simple prompts and displays results returned by algorithms.
+// Menu: console UI for manual BnB runs and BnB benchmark automation.
 
 #include "../include/Menu.h"
 
-#include "../include/BruteForceAlgorithm.h"
 #include "../include/Benchmark.h"
+#include "../include/BenchmarkBnB.h"
+#include "../include/BranchAndBoundBFSAlgorithm.h"
+#include "../include/BranchAndBoundDFSAlgorithm.h"
+#include "../include/BranchAndBoundLowestCostAlgorithm.h"
+#include "../include/BruteForceAlgorithm.h"
 #include "../include/NearestNeighborAlgorithm.h"
 #include "../include/RandomSearchAlgorithm.h"
 #include "../include/RepetitiveNNAlgorithm.h"
@@ -13,7 +16,6 @@
 #include <iostream>
 #include <string>
 
-// run: main interactive loop that dispatches user's choices
 void Menu::run() {
     while (true) {
         printMenu();
@@ -27,25 +29,37 @@ void Menu::run() {
                 printMatrix();
                 break;
             case 3: {
-                const TSPData runData = selectDataForAlgorithmRun();
-                runAlgorithm(BruteForceAlgorithm{}, runData);
+                runBruteForce();
                 break;
             }
             case 4:
                 runRandomSearch();
                 break;
             case 5: {
-                const TSPData runData = selectDataForAlgorithmRun();
-                runAlgorithm(NearestNeighborAlgorithm{}, runData);
+                runNearestNeighbor();
                 break;
             }
             case 6: {
-                const TSPData runData = selectDataForAlgorithmRun();
-                runAlgorithm(RepetitiveNNAlgorithm{}, runData);
+                runRepetitiveNearestNeighbor();
                 break;
             }
             case 7:
-                runIntelligentBenchmark();
+                runClassicBenchmark();
+                break;
+            case 8: {
+                runBranchAndBoundBfs();
+                break;
+            }
+            case 9: {
+                runBranchAndBoundDfs();
+                break;
+            }
+            case 10: {
+                runBranchAndBoundLowestCost();
+                break;
+            }
+            case 11:
+                runBenchmarkBnB();
                 break;
             case 0:
                 std::cout << "Program terminated.\n";
@@ -57,7 +71,6 @@ void Menu::run() {
     }
 }
 
-// printMenu: show available commands to the user
 void Menu::printMenu() {
     std::cout << "\n=== ATSP Menu ===\n"
               << "1. Load data from TSPLIB file\n"
@@ -67,6 +80,10 @@ void Menu::printMenu() {
               << "5. Nearest Neighbor (NN)\n"
               << "6. Repetitive Nearest Neighbor (RNN)\n"
               << "7. Run intelligent Benchmark (Save to CSV)\n"
+              << "8. Branch and Bound - BFS\n"
+              << "9. Branch and Bound - DFS\n"
+              << "10. Branch and Bound - Lowest-Cost\n"
+              << "11. Run Branch and Bound benchmark (Save to CSV)\n"
               << "0. Exit\n";
 }
 
@@ -100,7 +117,51 @@ void Menu::printMatrix() const {
     }
 }
 
-// runRandomSearch: run RAND algorithm with user-provided time limit
+void Menu::runBranchAndBoundBfs() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    BranchAndBoundBFSAlgorithm algorithm;
+    runWithStrategy(algorithm, runData);
+}
+
+void Menu::runBranchAndBoundDfs() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    BranchAndBoundDFSAlgorithm algorithm;
+    runWithStrategy(algorithm, runData);
+}
+
+void Menu::runBranchAndBoundLowestCost() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    BranchAndBoundLowestCostAlgorithm algorithm;
+    runWithStrategy(algorithm, runData);
+}
+
+void Menu::runBruteForce() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    BruteForceAlgorithm algorithm;
+    const Result result = algorithm.solve(runData);
+    printResult(result);
+}
+
 void Menu::runRandomSearch() {
     if (!data_.isLoaded()) {
         std::cout << "Please load data first.\n";
@@ -114,13 +175,41 @@ void Menu::runRandomSearch() {
     printResult(result);
 }
 
-// runIntelligentBenchmark: run automatic benchmark sequence
-void Menu::runIntelligentBenchmark() {
+void Menu::runNearestNeighbor() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    NearestNeighborAlgorithm algorithm;
+    const Result result = algorithm.solve(runData);
+    printResult(result);
+}
+
+void Menu::runRepetitiveNearestNeighbor() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    RepetitiveNNAlgorithm algorithm;
+    const Result result = algorithm.solve(runData);
+    printResult(result);
+}
+
+void Menu::runClassicBenchmark() {
     std::cout << "\n[Menu] Running option: Intelligent Benchmark (Save to CSV)\n";
     std::cout << "[Menu] The process will be performed automatically without further questions.\n";
     Benchmark benchmark;
     benchmark.runSmartBenchmark();
     std::cout << "[Menu] Benchmark finished. Returned to main menu.\n";
+}
+
+void Menu::runBenchmarkBnB() {
+    BenchmarkBnB benchmark;
+    benchmark.run();
 }
 
 // selectDataForAlgorithmRun: prompt user to choose a truncated size or full instance
@@ -142,22 +231,38 @@ TSPData Menu::selectDataForAlgorithmRun() const {
     }
 }
 
-// printResult: display algorithm result (path, cost, time)
 void Menu::printResult(const Result& result) {
-    if (result.bestPath.empty()) {
+    if (result.rawBestPathLength == 0 && result.bestPath.empty()) {
         std::cout << "No path found.\n";
         std::cout << "Cost: " << result.minCost << "\n";
         std::cout << "Time [us]: " << result.executionTimeMicroseconds << "\n";
+        std::cout << "Visited_Nodes: " << result.visitedNodes << "\n";
+        std::cout << "max_nodes_in_mem: " << result.maxNodesInMemory << "\n";
         return;
     }
 
     std::cout << "Best path: ";
-    for (const int node : result.bestPath) {
-        std::cout << node << " -> ";
+    if (result.rawBestPathLength > 0 && result.rawBestPath != nullptr) {
+        for (std::size_t i = 0; i < result.rawBestPathLength; ++i) {
+            std::cout << result.rawBestPath[i] << " -> ";
+        }
+        std::cout << result.rawBestPath[0] << '\n';
+    } else {
+        for (const int node : result.bestPath) {
+            std::cout << node << " -> ";
+        }
+        std::cout << result.bestPath.front() << '\n';
     }
-    std::cout << result.bestPath.front() << '\n';
+
     std::cout << "Cost: " << result.minCost << '\n';
     std::cout << "Time [us]: " << result.executionTimeMicroseconds << '\n';
+    std::cout << "Visited_Nodes: " << result.visitedNodes << '\n';
+    std::cout << "max_nodes_in_mem: " << result.maxNodesInMemory << '\n';
+}
+
+void Menu::runWithStrategy(BranchAndBoundAlgorithm& algorithm, const TSPData& data) {
+    const Result result = algorithm.solve(data);
+    printResult(result);
 }
 
 // readInt / readLongLong: small utility input helpers

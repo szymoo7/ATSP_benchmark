@@ -9,6 +9,7 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla in
 - `main.cpp` – główny plik uruchamiający aplikację
 - `src/` – implementacje algorytmów i logiki programu
 - `include/` – pliki nagłówkowe
+- `include/bnb/`, `src/bnb/` – własne struktury i operacje BnB (węzły, kontenery)
 - `data/` – przykładowe pliki z danymi ATSP (format TSPLIB)
 
 
@@ -18,6 +19,9 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla in
 - Nearest Neighbor
 - Losowe przeszukiwanie (Random Search)
 - Repetitive Nearest Neighbor
+- Branch and Bound BFS (`BranchAndBoundBFSAlgorithm`)
+- Branch and Bound DFS (`BranchAndBoundDFSAlgorithm`)
+- Branch and Bound Lowest-Cost (`BranchAndBoundLowestCostAlgorithm`)
 
 ## Wykorzystane struktury danych i rozwiązania techniczne
 
@@ -26,11 +30,15 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla in
 - **Wektory STL**: do przechowywania tras, permutacji, wyników i danych wejściowych (`std::vector<int>`, `std::vector<Result>`).
 - **Mapy i słowniki**: do mapowania nazw plików i wyników benchmarków (`std::map`, `std::unordered_map`).
 - **Interfejsy i polimorfizm**: interfejs `IAlgorithm` oraz klasy dziedziczące dla każdego algorytmu.
-- **DTO**: klasa `Result` do przechowywania wyniku algorytmu (trasa, koszt, czas).
+- **DTO**: klasa `Result` do przechowywania wyniku algorytmu (trasa, koszt, czas, metryki BnB).
 - **Parser TSPLIB**: własna implementacja wczytująca sekcję `EDGE_WEIGHT_SECTION` do macierzy odległości (`src/TSPLIBParser.cpp`).
 - **Pomiar czasu**: klasa `Timer` oparta o `std::chrono` (mikrosekundy).
 - **UI**: proste menu konsolowe w pętli (`Menu`).
-- **Benchmark**: automatyczne uruchamianie algorytmów na wielu plikach i zapis wyników do CSV (`src/Benchmark.cpp`, `include/Benchmark.h`).
+- **Benchmark klasyczny**: automatyczne uruchamianie algorytmów na wielu plikach i zapis wyników do CSV (`src/Benchmark.cpp`, `include/Benchmark.h`).
+- **Branch and Bound (bez STL w rdzeniu BnB)**:
+  - własny `Node` i redukcja macierzy (`include/bnb/BnBNode.h`, `src/bnb/BnBNode.cpp`),
+  - własne kontenery dynamiczne: `CustomStack`, `CustomQueue`, `CustomPriorityQueue` (`include/bnb/BnBContainers.h`, `src/bnb/BnBContainers.cpp`),
+  - metryki: `Visited_Nodes` i `max_nodes_in_mem` zwracane w `Result`.
 
 ## Przycinanie rozmiaru N
 
@@ -70,15 +78,43 @@ EOF
 
 ## Testowanie
 
-Testowanie odbywa się manualnie poprzez uruchamianie programu i wybór opcji z menu. Wyniki benchmarków oraz działania algorytmów można weryfikować na podstawie plików wejściowych z katalogu `data/`. Wyniki automatycznych benchmarków zapisywane są do pliku `benchmark_results.csv`.
+Testowanie odbywa się manualnie poprzez uruchamianie programu i wybór opcji z menu. Wyniki benchmarków i działania algorytmów można weryfikować na podstawie plików wejściowych z katalogu `data/`.
+
+- Wyniki benchmarku klasycznego zapisywane są do `benchmark_results.csv`.
+- Wyniki benchmarku BnB zapisywane są do `bnb_benchmark_results.csv`.
 
 ## Przykładowa sekwencja w menu
 
 1. Opcja `1` → podaj ścieżkę: `sample.atsp` (lub wybierz plik z katalogu `data/`)
 2. Opcja `2` → podgląd macierzy
-3. Opcje `3..6` → uruchomienie algorytmów i wybór `N`
-4. Opcja `7` → automatyczny benchmark i zapis do pliku `benchmark_results.csv` (w katalogu build)
-5. Opcja `0` → zakończenie programu
+3. Opcje `3..6` → uruchomienie Brute Force / RAND / NN / RNN i wybór `N`
+4. Opcje `8..10` → uruchomienie BnB (BFS / DFS / Lowest-Cost) i wybór `N`
+5. Opcja `7` → benchmark klasyczny i zapis do `benchmark_results.csv`
+6. Opcja `11` → benchmark BnB i zapis do `bnb_benchmark_results.csv`
+7. Opcja `0` → zakończenie programu
+
+## Benchmark Branch and Bound (`BenchmarkBnB`)
+
+Benchmark BnB działa na bazie `ftv170.atsp`, przycina instancję do zadanego `N` (lewy górny wycinek) i wykonuje serię testów dla strategii:
+- `BFS`
+- `DFS`
+- `Lowest-Cost`
+
+Każdy punkt testowy wykonywany jest `kTrialCount = 5` razy, a do CSV trafiają wartości zagregowane.
+
+### Format CSV benchmarku BnB
+
+Plik wynikowy: `bnb_benchmark_results.csv`
+
+Nagłówek:
+
+`Source;Algorithm;N;Avg_Time_us;Opt_Cost;Trial_Count;Visited_Nodes;max_nodes_in_mem`
+
+Opis kolumn:
+- `Avg_Time_us` – średni czas z prób w mikrosekundach,
+- `Opt_Cost` – koszt najlepszego cyklu,
+- `Visited_Nodes` – liczba węzłów zdjętych do przetworzenia,
+- `max_nodes_in_mem` – średnie maksymalne zajęcie frontieru (z prób).
 
 ## Kalibracja i dobór parametrów testów
 

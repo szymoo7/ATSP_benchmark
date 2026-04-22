@@ -1,6 +1,7 @@
 // Menu: simple command-line UI for loading data and running algorithms
 #pragma once
 
+#include "BranchAndBoundAlgorithm.h"
 #include "Result.h"
 #include "TSPData.h"
 
@@ -17,21 +18,18 @@ private:
 
     void loadData();
     void printMatrix() const;
+    void runBruteForce();
     void runRandomSearch();
-    void runIntelligentBenchmark();
+    void runNearestNeighbor();
+    void runRepetitiveNearestNeighbor();
+    void runClassicBenchmark();
+    void runBranchAndBoundBfs();
+    void runBranchAndBoundDfs();
+    void runBranchAndBoundLowestCost();
+    void runBenchmarkBnB();
     [[nodiscard]] TSPData selectDataForAlgorithmRun() const;
 
-    // Template for running algorithms
-    template <typename TAlgorithm>
-    void runAlgorithm(TAlgorithm algorithm, const TSPData& runData) {
-        if (!data_.isLoaded()) {
-            std::cout << "Load data first.\n";
-            return;
-        }
-
-        const Result result = algorithm.solve(runData);
-        printResult(result);
-    }
+    static void runWithStrategy(BranchAndBoundAlgorithm& algorithm, const TSPData& data);
 
     // Helper functions for parsing
     static void printResult(const Result& result);
