@@ -4,12 +4,14 @@
 
 #include "../include/Benchmark.h"
 #include "../include/BenchmarkBnB.h"
+#include "../include/BenchmarkSimulatedAnnealing.h"
 #include "../include/BranchAndBoundBFSAlgorithm.h"
 #include "../include/BranchAndBoundDFSAlgorithm.h"
 #include "../include/BranchAndBoundLowestCostAlgorithm.h"
 #include "../include/BruteForceAlgorithm.h"
 #include "../include/NearestNeighborAlgorithm.h"
 #include "../include/RandomSearchAlgorithm.h"
+#include "../include/SimulatedAnnealingAlgorithm.h"
 #include "../include/RepetitiveNNAlgorithm.h"
 #include "../include/TSPLIBParser.h"
 
@@ -61,6 +63,9 @@ void Menu::run() {
             case 11:
                 runBenchmarkBnB();
                 break;
+            case 12:
+                runSimulatedAnnealingMenu();
+                break;
             case 0:
                 std::cout << "Program terminated.\n";
                 return;
@@ -84,6 +89,7 @@ void Menu::printMenu() {
               << "9. Branch and Bound - DFS\n"
               << "10. Branch and Bound - Lowest-Cost\n"
               << "11. Run Branch and Bound benchmark (Save to CSV)\n"
+              << "12. Simulated Annealing (SW)\n"
               << "0. Exit\n";
 }
 
@@ -212,6 +218,52 @@ void Menu::runBenchmarkBnB() {
     benchmark.run();
 }
 
+void Menu::runSimulatedAnnealingMenu() {
+    while (true) {
+        std::cout << "\n=== Simulated Annealing (SW) ===\n"
+                  << "1. Single Run\n"
+                  << "2. Benchmark Run\n"
+                  << "0. Back\n";
+
+        const int option = readInt("Choose option: ");
+        switch (option) {
+            case 1:
+                runSimulatedAnnealingSingleRun();
+                return;
+            case 2:
+                runSimulatedAnnealingBenchmark();
+                return;
+            case 0:
+                return;
+            default:
+                std::cout << "Invalid option.\n";
+                break;
+        }
+    }
+}
+
+void Menu::runSimulatedAnnealingSingleRun() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+    const auto initialSolutionType = readInitialSolutionType();
+    const auto neighborhoodType = readNeighborhoodType();
+
+    SimulatedAnnealingAlgorithm algorithm(initialSolutionType,
+                                          neighborhoodType,
+                                          SimulatedAnnealingAlgorithm::CoolingSchedule::Geometric);
+    const Result result = algorithm.solve(runData);
+    printResult(result);
+}
+
+void Menu::runSimulatedAnnealingBenchmark() {
+    BenchmarkSimulatedAnnealing benchmark;
+    benchmark.run();
+}
+
 // selectDataForAlgorithmRun: prompt user to choose a truncated size or full instance
 TSPData Menu::selectDataForAlgorithmRun() const {
     while (true) {
@@ -263,6 +315,45 @@ void Menu::printResult(const Result& result) {
 void Menu::runWithStrategy(BranchAndBoundAlgorithm& algorithm, const TSPData& data) {
     const Result result = algorithm.solve(data);
     printResult(result);
+}
+
+SimulatedAnnealingAlgorithm::InitialSolutionType Menu::readInitialSolutionType() {
+    while (true) {
+        std::cout << "Initial solution type:\n"
+                  << "1. Random\n"
+                  << "2. Nearest Neighbor\n";
+        const int option = readInt("Choose option: ");
+        switch (option) {
+            case 1:
+                return SimulatedAnnealingAlgorithm::InitialSolutionType::Random;
+            case 2:
+                return SimulatedAnnealingAlgorithm::InitialSolutionType::NearestNeighbor;
+            default:
+                std::cout << "Invalid option.\n";
+                break;
+        }
+    }
+}
+
+SimulatedAnnealingAlgorithm::NeighborhoodType Menu::readNeighborhoodType() {
+    while (true) {
+        std::cout << "Neighborhood type:\n"
+                  << "1. Swap\n"
+                  << "2. Insert\n"
+                  << "3. Invert\n";
+        const int option = readInt("Choose option: ");
+        switch (option) {
+            case 1:
+                return SimulatedAnnealingAlgorithm::NeighborhoodType::Swap;
+            case 2:
+                return SimulatedAnnealingAlgorithm::NeighborhoodType::Insert;
+            case 3:
+                return SimulatedAnnealingAlgorithm::NeighborhoodType::Invert;
+            default:
+                std::cout << "Invalid option.\n";
+                break;
+        }
+    }
 }
 
 // readInt / readLongLong: small utility input helpers

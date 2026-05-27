@@ -22,6 +22,7 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla in
 - Branch and Bound BFS (`BranchAndBoundBFSAlgorithm`)
 - Branch and Bound DFS (`BranchAndBoundDFSAlgorithm`)
 - Branch and Bound Lowest-Cost (`BranchAndBoundLowestCostAlgorithm`)
+- Symulowane Wyżarzanie (`SimulatedAnnealingAlgorithm`)
 
 ## Wykorzystane struktury danych i rozwiązania techniczne
 
@@ -35,6 +36,7 @@ Projekt realizuje różne algorytmy rozwiązywania problemu komiwojażera dla in
 - **Pomiar czasu**: klasa `Timer` oparta o `std::chrono` (mikrosekundy).
 - **UI**: proste menu konsolowe w pętli (`Menu`).
 - **Benchmark klasyczny**: automatyczne uruchamianie algorytmów na wielu plikach i zapis wyników do CSV (`src/Benchmark.cpp`, `include/Benchmark.h`).
+- **Benchmark SA**: automatyczne uruchamianie i badanie wpływu parametrów wyżarzania (`src/BenchmarkSimulatedAnnealing.cpp`).
 - **Branch and Bound (bez STL w rdzeniu BnB)**:
   - własny `Node` i redukcja macierzy (`include/bnb/BnBNode.h`, `src/bnb/BnBNode.cpp`),
   - własne kontenery dynamiczne: `CustomStack`, `CustomQueue`, `CustomPriorityQueue` (`include/bnb/BnBContainers.h`, `src/bnb/BnBContainers.cpp`),
@@ -82,6 +84,7 @@ Testowanie odbywa się manualnie poprzez uruchamianie programu i wybór opcji z 
 
 - Wyniki benchmarku klasycznego zapisywane są do `benchmark_results.csv`.
 - Wyniki benchmarku BnB zapisywane są do `bnb_benchmark_results.csv`.
+- Wyniki benchmarku Symulowanego Wyżarzania zapisywane są do `sa_benchmark_results.csv`.
 
 ## Przykładowa sekwencja w menu
 
@@ -91,7 +94,8 @@ Testowanie odbywa się manualnie poprzez uruchamianie programu i wybór opcji z 
 4. Opcje `8..10` → uruchomienie BnB (BFS / DFS / Lowest-Cost) i wybór `N`
 5. Opcja `7` → benchmark klasyczny i zapis do `benchmark_results.csv`
 6. Opcja `11` → benchmark BnB i zapis do `bnb_benchmark_results.csv`
-7. Opcja `0` → zakończenie programu
+7. Opcja `12` → menu Symulowanego Wyżarzania (pojedyncze sprawdzenie i pomiary)
+8. Opcja `0` → zakończenie programu
 
 ## Benchmark Branch and Bound (`BenchmarkBnB`)
 
@@ -115,6 +119,16 @@ Opis kolumn:
 - `Opt_Cost` – koszt najlepszego cyklu,
 - `Visited_Nodes` – liczba węzłów zdjętych do przetworzenia,
 - `max_nodes_in_mem` – średnie maksymalne zajęcie frontieru (z prób).
+
+## Benchmark Symulowanego Wyżarzania (`BenchmarkSimulatedAnnealing`)
+
+Zestaw eksperymentów badający skuteczność Simulated Annealing. Główne eksperymenty wewnątrz aplikacji: 
+1. Porównanie strategii rozwiązań początkowych (NN vs losowe) dla rosnących instancji ATSP.
+2. Wpływ wyboru przestrzeni sąsiedztwa (Swap, Insert, Invert).
+3. Badanie parametrów współczynników chłodzenia, limitów epok oraz harmonogramów liniowych i geometrycznych temperatury.
+
+
+Plik wynikowy po włączeniu z menu: `sa_benchmark_results.csv`
 
 ## Kalibracja i dobór parametrów testów
 

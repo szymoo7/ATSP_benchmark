@@ -24,6 +24,9 @@ add_executable(PEA_project1
 		src/RepetitiveNNAlgorithm.cpp
 		src/Timer.cpp
 		src/TSPLIBParser.cpp
+		include/SimulatedAnnealingAlgorithm.h
+		src/BenchmarkSimulatedAnnealing.cpp
+		src/SimulatedAnnealingAlgorithm.cpp
 )
 
 target_include_directories(PEA_project1 PRIVATE include)

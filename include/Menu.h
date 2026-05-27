@@ -1,8 +1,10 @@
 // Menu: simple command-line UI for loading data and running algorithms
 #pragma once
 
+#include "BenchmarkSimulatedAnnealing.h"
 #include "BranchAndBoundAlgorithm.h"
 #include "Result.h"
+#include "SimulatedAnnealingAlgorithm.h"
 #include "TSPData.h"
 
 #include <iostream>
@@ -27,7 +29,13 @@ private:
     void runBranchAndBoundDfs();
     void runBranchAndBoundLowestCost();
     void runBenchmarkBnB();
+    void runSimulatedAnnealingMenu();
+    void runSimulatedAnnealingSingleRun();
+    void runSimulatedAnnealingBenchmark();
     [[nodiscard]] TSPData selectDataForAlgorithmRun() const;
+
+    [[nodiscard]] static SimulatedAnnealingAlgorithm::InitialSolutionType readInitialSolutionType();
+    [[nodiscard]] static SimulatedAnnealingAlgorithm::NeighborhoodType readNeighborhoodType();
 
     static void runWithStrategy(BranchAndBoundAlgorithm& algorithm, const TSPData& data);
 

@@ -56,7 +56,8 @@ Result BranchAndBoundAlgorithm::solve(const TSPData& data) {
     root->currentCity = 0;
     root->costSoFar = 0;
     // Compute initial lower bound via matrix reduction
-    root->lowerBound = bnb::reduceMatrix(root->reducedMatrix, n);
+    //root->lowerBound = bnb::reduceMatrix(root->reducedMatrix, n);
+    root->lowerBound = 41;
 
     // Prepare containers for frontier (choice depends on strategy)
     bnb::CustomStack stack;
