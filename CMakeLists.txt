@@ -27,6 +27,10 @@ add_executable(PEA_project1
 		include/SimulatedAnnealingAlgorithm.h
 		src/BenchmarkSimulatedAnnealing.cpp
 		src/SimulatedAnnealingAlgorithm.cpp
+		include/GeneticAlgorithm.h
+		src/GeneticAlgorithm.cpp
+		include/GABenchmark.h
+		src/GABenchmark.cpp
 )
 
 target_include_directories(PEA_project1 PRIVATE include)

@@ -5,6 +5,8 @@
 #include "../include/Benchmark.h"
 #include "../include/BenchmarkBnB.h"
 #include "../include/BenchmarkSimulatedAnnealing.h"
+#include "../include/GABenchmark.h"
+#include "../include/GeneticAlgorithm.h"
 #include "../include/BranchAndBoundBFSAlgorithm.h"
 #include "../include/BranchAndBoundDFSAlgorithm.h"
 #include "../include/BranchAndBoundLowestCostAlgorithm.h"
@@ -16,6 +18,7 @@
 #include "../include/TSPLIBParser.h"
 
 #include <iostream>
+#include <optional>
 #include <string>
 
 void Menu::run() {
@@ -66,6 +69,9 @@ void Menu::run() {
             case 12:
                 runSimulatedAnnealingMenu();
                 break;
+            case 13:
+                runGeneticAlgorithmMenu();
+                break;
             case 0:
                 std::cout << "Program terminated.\n";
                 return;
@@ -90,6 +96,7 @@ void Menu::printMenu() {
               << "10. Branch and Bound - Lowest-Cost\n"
               << "11. Run Branch and Bound benchmark (Save to CSV)\n"
               << "12. Simulated Annealing (SW)\n"
+              << "13. Genetic Algorithm (GA)\n"
               << "0. Exit\n";
 }
 
@@ -264,6 +271,74 @@ void Menu::runSimulatedAnnealingBenchmark() {
     benchmark.run();
 }
 
+// runGeneticAlgorithmMenu: submenu for GA single run and benchmark
+void Menu::runGeneticAlgorithmMenu() {
+    while (true) {
+        std::cout << "\n=== Genetic Algorithm (GA) ===\n"
+                  << "1. Single Run\n"
+                  << "2. Benchmark Run\n"
+                  << "0. Back\n";
+
+        const int option = readInt("Choose option: ");
+        switch (option) {
+            case 1:
+                runGeneticAlgorithmSingleRun();
+                return;
+            case 2:
+                runGeneticAlgorithmBenchmark();
+                return;
+            case 0:
+                return;
+            default:
+                std::cout << "Invalid option.\n";
+                break;
+        }
+    }
+}
+
+// runGeneticAlgorithmSingleRun: prompt for all GA parameters and run once
+void Menu::runGeneticAlgorithmSingleRun() {
+    if (!data_.isLoaded()) {
+        std::cout << "Please load data first.\n";
+        return;
+    }
+
+    const TSPData runData = selectDataForAlgorithmRun();
+
+    std::cout << "\n=== Genetic Algorithm parameters ===\n"
+              << "Press Enter to accept the value shown in [brackets].\n";
+
+    const int populationSize = readIntWithDefault("Population size", 100);
+    const double crossoverRate = readDoubleWithDefault("Crossover rate [0.0-1.0]", 0.8);
+    const double mutationRate = readDoubleWithDefault("Mutation rate [0.0-1.0]", 0.1);
+    const int generations = readIntWithDefault("Number of generations (0 = auto)", 100);
+    const auto mutationType = readGeneticAlgorithmMutationType();
+    const auto seed = readOptionalSeed();
+
+    std::cout << "\nSelected configuration:\n"
+              << "  Population size: " << populationSize << '\n'
+              << "  Crossover rate: " << crossoverRate << '\n'
+              << "  Mutation rate: " << mutationRate << '\n'
+              << "  Generations: " << generations << (generations == 0 ? " (auto)" : "") << '\n'
+              << "  Mutation type: " << GeneticAlgorithm::toString(mutationType) << '\n'
+              << "  Seed: " << (seed.has_value() ? std::to_string(*seed) : "random") << '\n';
+
+    GeneticAlgorithm algorithm(populationSize,
+                               crossoverRate,
+                               mutationRate,
+                               generations,
+                               mutationType,
+                               seed);
+    const Result result = algorithm.solve(runData);
+    printResult(result);
+}
+
+// runGeneticAlgorithmBenchmark: launch automated GA benchmark suite
+void Menu::runGeneticAlgorithmBenchmark() {
+    GABenchmark benchmark;
+    benchmark.run();
+}
+
 // selectDataForAlgorithmRun: prompt user to choose a truncated size or full instance
 TSPData Menu::selectDataForAlgorithmRun() const {
     while (true) {
@@ -356,6 +431,37 @@ SimulatedAnnealingAlgorithm::NeighborhoodType Menu::readNeighborhoodType() {
     }
 }
 
+// readGeneticAlgorithmMutationType: prompt for GA mutation operator
+GeneticAlgorithm::MutationType Menu::readGeneticAlgorithmMutationType() {
+    while (true) {
+        std::cout << "Mutation type:\n"
+                  << "1. Swap\n"
+                  << "2. Inversion\n"
+                  << "3. Random (swap or inversion)\n";
+        const int option = readIntWithDefault("Choose option", 3);
+        switch (option) {
+            case 1:
+                return GeneticAlgorithm::MutationType::Swap;
+            case 2:
+                return GeneticAlgorithm::MutationType::Inversion;
+            case 3:
+                return GeneticAlgorithm::MutationType::Random;
+            default:
+                std::cout << "Invalid option.\n";
+                break;
+        }
+    }
+}
+
+// readOptionalSeed: prompt for RNG seed (0 means random seed)
+std::optional<std::uint32_t> Menu::readOptionalSeed() {
+    const int seedInput = readIntWithDefault("Random seed (0 = random)", 0);
+    if (seedInput <= 0) {
+        return std::nullopt;
+    }
+    return static_cast<std::uint32_t>(seedInput);
+}
+
 // readInt / readLongLong: small utility input helpers
 int Menu::readInt(const std::string& prompt) {
     while (true) {
@@ -363,6 +469,31 @@ int Menu::readInt(const std::string& prompt) {
         std::string line;
         if (!std::getline(std::cin >> std::ws, line)) {
             return 0;
+        }
+
+        try {
+            std::size_t pos = 0;
+            const int value = std::stoi(line, &pos);
+            if (pos == line.size()) {
+                return value;
+            }
+        } catch (...) {
+        }
+        std::cout << "Please enter a valid integer.\n";
+    }
+}
+
+// readIntWithDefault: read integer or accept default on empty input
+int Menu::readIntWithDefault(const std::string& prompt, int defaultValue) {
+    while (true) {
+        std::cout << prompt << " [" << defaultValue << "]: ";
+        std::string line;
+        if (!std::getline(std::cin >> std::ws, line)) {
+            return defaultValue;
+        }
+
+        if (line.empty()) {
+            return defaultValue;
         }
 
         try {
@@ -394,6 +525,51 @@ long long Menu::readLongLong(const std::string& prompt) {
         } catch (...) {
         }
         std::cout << "Please enter a positive integer.\n";
+    }
+}
+
+double Menu::readDouble(const std::string& prompt) {
+    while (true) {
+        std::cout << prompt;
+        std::string line;
+        if (!std::getline(std::cin >> std::ws, line)) {
+            return 0.0;
+        }
+
+        try {
+            std::size_t pos = 0;
+            const double value = std::stod(line, &pos);
+            if (pos == line.size()) {
+                return value;
+            }
+        } catch (...) {
+        }
+        std::cout << "Please enter a valid number.\n";
+    }
+}
+
+// readDoubleWithDefault: read floating-point value or accept default on empty input
+double Menu::readDoubleWithDefault(const std::string& prompt, double defaultValue) {
+    while (true) {
+        std::cout << prompt << " [" << defaultValue << "]: ";
+        std::string line;
+        if (!std::getline(std::cin >> std::ws, line)) {
+            return defaultValue;
+        }
+
+        if (line.empty()) {
+            return defaultValue;
+        }
+
+        try {
+            std::size_t pos = 0;
+            const double value = std::stod(line, &pos);
+            if (pos == line.size()) {
+                return value;
+            }
+        } catch (...) {
+        }
+        std::cout << "Please enter a valid number.\n";
     }
 }
 
